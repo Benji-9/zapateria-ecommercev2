@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function CartPage() {
     const { items, removeFromCart, clearCart, total } = useCart();
@@ -15,7 +16,7 @@ export default function CartPage() {
 
     const handleWhatsAppCheckout = async () => {
         if (!name || !phone) {
-            alert("Please enter your name and phone number");
+            toast.error("Por favor completá tu nombre y teléfono");
             return;
         }
 
@@ -67,7 +68,7 @@ Gracias!`;
 
         } catch (error) {
             console.error(error);
-            alert("Something went wrong. Please try again.");
+            toast.error("Hubo un error al procesar el pedido. Intentá de nuevo.");
         } finally {
             setLoading(false);
         }
@@ -89,18 +90,19 @@ Gracias!`;
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
                     {items.map((item) => (
-                        <div key={item.productId} className="flex items-center border-b py-4">
+                        <div key={`${item.productId}-${item.size}-${item.color}`} className="flex items-center border-b py-4">
                             <div className="relative w-24 h-24 flex-shrink-0">
                                 {/* Placeholder image if item.image is not valid url or use a default */}
                                 <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-md" />
                             </div>
                             <div className="ml-4 flex-1">
                                 <h3 className="text-lg font-medium">{item.name}</h3>
+                                <p className="text-sm text-gray-500">Talle: {item.size} | Color: {item.color}</p>
                                 <p className="text-gray-500">${item.price}</p>
-                                <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                                <p className="text-sm text-gray-500">Cant: {item.quantity}</p>
                             </div>
                             <button
-                                onClick={() => removeFromCart(item.productId)}
+                                onClick={() => removeFromCart(item.productId, item.size, item.color)}
                                 className="text-red-500 hover:text-red-700"
                             >
                                 <Trash2 className="h-5 w-5" />

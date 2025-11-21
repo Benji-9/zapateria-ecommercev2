@@ -4,10 +4,23 @@ import Product from '@/models/Product';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
     await dbConnect();
     try {
-        const products = await Product.find({});
+        const { searchParams } = new URL(request.url);
+        const search = searchParams.get('search');
+
+        let query = {};
+        if (search) {
+            query = {
+                $or: [
+                    { name: { $regex: search, $options: 'i' } },
+                    { description: { $regex: search, $options: 'i' } }
+                ]
+            };
+        }
+
+        const products = await Product.find(query);
         return NextResponse.json(products);
     } catch (error) {
         return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });

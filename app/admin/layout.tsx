@@ -18,7 +18,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     const navItems = [
         { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-        { href: "/admin/products/new", label: "Add Product", icon: Package }, // Temporarily pointing to new product, will fix later
+        { href: "/admin/products", label: "Products", icon: Package },
         { href: "/admin/categories", label: "Categories", icon: List },
         { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
     ];

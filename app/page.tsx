@@ -1,8 +1,8 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
 import { HeroBanner } from "@/components/home/HeroBanner";
+import { PromotionsBanner } from "@/components/home/PromotionsBanner";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { ProductCard } from "@/components/ui/ProductCard";
 
@@ -22,7 +22,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <HeroBanner />
-
+      <PromotionsBanner />
       <CategoryGrid />
 
       <section className="w-full py-12 md:py-24">
@@ -46,4 +46,3 @@ export default function Home() {
     </div>
   );
 }
-

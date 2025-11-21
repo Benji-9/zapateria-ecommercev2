@@ -70,18 +70,12 @@ export function ProductCard({ product }: ProductCardProps) {
                     )}
                 </div>
 
-                <Button
-                    className="w-full mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    onClick={() => addToCart({
-                        productId: product._id,
-                        name: product.name,
-                        price: product.salePrice || product.price,
-                        image: mainImage,
-                        quantity: 1
-                    })}
+                <Link
+                    href={`/products/${product._id}`}
+                    className="block w-full mt-4 text-center bg-black text-white py-2 rounded hover:bg-gray-800 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                 >
-                    Agregar al Carrito
-                </Button>
+                    Ver Detalles
+                </Link>
             </div>
         </div>
     );

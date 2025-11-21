@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
 import { useSession } from 'next-auth/react';
 
+import { SearchBar } from '@/components/ui/SearchBar';
+
 export function Navbar() {
     const { items } = useCart();
     const { data: session } = useSession();
@@ -36,7 +38,7 @@ export function Navbar() {
                 </div>
                 <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
                     <div className="w-full flex-1 md:w-auto md:flex-none">
-                        {/* Search component could go here */}
+                        <SearchBar />
                     </div>
                     <nav className="flex items-center gap-2">
                         {session ? (
