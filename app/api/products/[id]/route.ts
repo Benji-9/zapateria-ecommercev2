@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Product from '@/models/Product';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
     await dbConnect();
+    const { id } = await params;
     try {
-        const product = await Product.findById(params.id);
+        const product = await Product.findById(id);
         if (!product) {
             return NextResponse.json({ error: "Product not found" }, { status: 404 });
         }
@@ -15,10 +16,11 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     await dbConnect();
+    const { id } = await params;
     try {
-        const deletedProduct = await Product.findByIdAndDelete(params.id);
+        const deletedProduct = await Product.findByIdAndDelete(id);
         if (!deletedProduct) {
             return NextResponse.json({ error: "Product not found" }, { status: 404 });
         }
@@ -28,11 +30,12 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     await dbConnect();
+    const { id } = await params;
     try {
         const body = await request.json();
-        const updatedProduct = await Product.findByIdAndUpdate(params.id, body, {
+        const updatedProduct = await Product.findByIdAndUpdate(id, body, {
             new: true,
             runValidators: true,
         });

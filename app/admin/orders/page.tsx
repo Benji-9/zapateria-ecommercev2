@@ -1,91 +1,109 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-
-interface OrderItem {
-    product: {
-        name: string;
-        price: number;
-    };
-    quantity: number;
-    price: number;
-}
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 interface Order {
     _id: string;
-    customerInfo: {
-        name: string;
-        phone: string;
-    };
-    items: OrderItem[];
+    user: { name: string; email: string };
     total: number;
     status: string;
     createdAt: string;
+    items: any[];
 }
 
-export default function OrdersPage() {
+export default function AdminOrdersPage() {
     const [orders, setOrders] = useState<Order[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchOrders();
     }, []);
 
     const fetchOrders = async () => {
-        const res = await fetch("/api/orders");
-        if (res.ok) {
+        try {
+            const res = await fetch('/api/admin/orders');
             const data = await res.json();
-            setOrders(data);
+            setOrders(data.orders);
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
+    const updateStatus = async (id: string, status: string) => {
+        try {
+            const res = await fetch('/api/admin/orders', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, status }),
+            });
+
+            if (res.ok) {
+                setOrders(orders.map(o => o._id === id ? { ...o, status } : o));
+                toast.success('Order status updated');
+            } else {
+                toast.error('Failed to update status');
+            }
+        } catch (error) {
+            toast.error('Error updating status');
+        }
+    };
+
+    if (loading) return <div>Loading orders...</div>;
+
     return (
         <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Orders</h1>
-
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <h1 className="text-3xl font-bold mb-6">Orders</h1>
+            <div className="bg-white rounded-lg shadow overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {orders.map((order) => (
                             <tr key={order._id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                     {order._id.substring(0, 8)}...
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm font-medium text-gray-900">{order.customerInfo?.name || 'Guest'}</div>
-                                    <div className="text-sm text-gray-500">{order.customerInfo?.phone}</div>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {order.user?.name || 'Guest'}
+                                    <div className="text-xs text-gray-400">{order.user?.email}</div>
                                 </td>
-                                <td className="px-6 py-4">
-                                    <ul className="text-sm text-gray-500">
-                                        {order.items.map((item, idx) => (
-                                            <li key={idx}>
-                                                {item.product?.name} x {item.quantity}
-                                            </li>
-                                        ))}
-                                    </ul>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {new Date(order.createdAt).toLocaleDateString()}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     ${order.total}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
                                             order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                'bg-red-100 text-red-800'
-                                        }`}>
+                                                'bg-gray-100 text-gray-800'}`}>
                                         {order.status}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {new Date(order.createdAt).toLocaleDateString()}
+                                    <select
+                                        value={order.status}
+                                        onChange={(e) => updateStatus(order._id, e.target.value)}
+                                        className="border rounded p-1 text-sm"
+                                    >
+                                        <option value="pending">Pending</option>
+                                        <option value="processing">Processing</option>
+                                        <option value="shipped">Shipped</option>
+                                        <option value="completed">Completed</option>
+                                        <option value="cancelled">Cancelled</option>
+                                    </select>
                                 </td>
                             </tr>
                         ))}

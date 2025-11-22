@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
+import { Heart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 interface ProductCardProps {
     product: {
@@ -19,11 +23,58 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
     const { addToCart } = useCart();
+    const { data: session } = useSession();
+    const [isFavorite, setIsFavorite] = useState(false);
     const mainImage = product.images?.[0] || "/placeholder.png";
     const hasDiscount = product.salePrice && product.salePrice < product.price;
     const discountPercentage = hasDiscount
         ? Math.round(((product.price - product.salePrice!) / product.price) * 100)
         : 0;
+
+    useEffect(() => {
+        if (session?.user) {
+            checkFavoriteStatus();
+        }
+    }, [session]);
+
+    const checkFavoriteStatus = async () => {
+        try {
+            const res = await fetch('/api/user/favorites');
+            const data = await res.json();
+            if (data.favorites) {
+                const isFav = data.favorites.some((fav: any) => fav._id === product._id);
+                setIsFavorite(isFav);
+            }
+        } catch (error) {
+            console.error('Error checking favorites:', error);
+        }
+    };
+
+    const toggleFavorite = async (e: React.MouseEvent) => {
+        e.preventDefault(); // Prevent link navigation
+        if (!session?.user) {
+            toast.error("Iniciá sesión para guardar favoritos");
+            return;
+        }
+
+        try {
+            const method = isFavorite ? 'DELETE' : 'POST';
+            const res = await fetch('/api/user/favorites', {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId: product._id }),
+            });
+
+            if (res.ok) {
+                setIsFavorite(!isFavorite);
+                toast.success(isFavorite ? "Eliminado de favoritos" : "Agregado a favoritos");
+            } else {
+                toast.error("Error al actualizar favoritos");
+            }
+        } catch (error) {
+            toast.error("Error al actualizar favoritos");
+        }
+    };
 
     return (
         <div className="group relative bg-white rounded-lg overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow duration-300">
@@ -40,6 +91,14 @@ export function ProductCard({ product }: ProductCardProps) {
                     </span>
                 )}
             </div>
+
+            {/* Favorite Button */}
+            <button
+                onClick={toggleFavorite}
+                className="absolute top-2 right-2 z-20 p-2 rounded-full bg-white/80 hover:bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200"
+            >
+                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
+            </button>
 
             {/* Image */}
             <Link href={`/products/${product._id}`} className="block relative aspect-[4/5] overflow-hidden bg-gray-100">

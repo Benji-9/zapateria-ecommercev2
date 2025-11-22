@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
-import { Check, ShoppingBag, AlertCircle } from "lucide-react";
+import { Check, ShoppingBag, AlertCircle, Heart } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 interface Variant {
     size: string;
@@ -27,9 +28,11 @@ interface Product {
 export default function ProductDetailPage() {
     const { id } = useParams();
     const { addToCart } = useCart();
+    const { data: session } = useSession();
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [isFavorite, setIsFavorite] = useState(false);
 
     const [selectedSize, setSelectedSize] = useState("");
     const [selectedColor, setSelectedColor] = useState("");
@@ -53,6 +56,50 @@ export default function ProductDetailPage() {
                 setLoading(false);
             });
     }, [id]);
+
+    useEffect(() => {
+        if (session?.user && product) {
+            checkFavoriteStatus();
+        }
+    }, [session, product]);
+
+    const checkFavoriteStatus = async () => {
+        try {
+            const res = await fetch('/api/user/favorites');
+            const data = await res.json();
+            if (data.favorites) {
+                const isFav = data.favorites.some((fav: any) => fav._id === product?._id);
+                setIsFavorite(isFav);
+            }
+        } catch (error) {
+            console.error('Error checking favorites:', error);
+        }
+    };
+
+    const toggleFavorite = async () => {
+        if (!session?.user) {
+            toast.error("Iniciá sesión para guardar favoritos");
+            return;
+        }
+
+        try {
+            const method = isFavorite ? 'DELETE' : 'POST';
+            const res = await fetch('/api/user/favorites', {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId: product?._id }),
+            });
+
+            if (res.ok) {
+                setIsFavorite(!isFavorite);
+                toast.success(isFavorite ? "Eliminado de favoritos" : "Agregado a favoritos");
+            } else {
+                toast.error("Error al actualizar favoritos");
+            }
+        } catch (error) {
+            toast.error("Error al actualizar favoritos");
+        }
+    };
 
     const handleAddToCart = () => {
         if (!product || !selectedSize || !selectedColor) return;
@@ -131,7 +178,15 @@ export default function ProductDetailPage() {
                         <span className="text-black font-medium mx-1">{product.category}</span>
                     </nav>
 
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{product.name}</h1>
+                    <div className="flex justify-between items-start">
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{product.name}</h1>
+                        <button
+                            onClick={toggleFavorite}
+                            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                        >
+                            <Heart className={`w-6 h-6 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
+                        </button>
+                    </div>
 
                     <div className="flex items-baseline gap-4 mb-6">
                         {hasDiscount ? (
